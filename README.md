@@ -1,14 +1,14 @@
 # `ssq`: Seznam Slovník Query
 
-(This page is only of interest to Czech speakers.)
+(This page is of interest to Czech speakers only I'm afraid.)
 
 ## What's That?
 
 `ssq` is a command-line front-end to [slovnik.seznam.cz](http://slovnik.seznam.cz)
 (Czech/English, Czech/German, etc. dictionary). I have used
-[sdcv](http://dushistov.github.io/sdcv/), but the free StarDict dictionaries are poor.
-Seznam's dictionaries, provided by Lingea, are much better; contain idioms and example
-language usage, etc.
+[sdcv](http://dushistov.github.io/sdcv/) for a while, but the free StarDict dictionaries are poor.
+Seznam's dictionaries, provided by Lingea s.r.o., are much better and contain idioms
+and example language usage, too.
 
 As I percieve it, `ssq` is a rather limited web browser, and as such, I don't think
 it violates any terms of use. But if you're in doubt, feel free to consult it.
@@ -18,7 +18,7 @@ it violates any terms of use. But if you're in doubt, feel free to consult it.
 * KISS
 * Multilingual support
 * Support for idioms, language use examples
-* Support for failed queries (aka "did you mean") and non-exact matches
+* Support for failed queries ("did you mean") and non-exact matches
 
 ## Usage
 
@@ -28,6 +28,8 @@ The valid values for `LANG` are `en`, `de`, `fr`, `it`, `es`, `ru`, `sk`. The de
 is `en`.
 
 ### Exact Match
+
+Hope this software isn't `$(ssq mizerný)`!
 
     user@machine ~ % ssq mizerný
     mizerný:
@@ -85,3 +87,7 @@ is `en`.
 
 Well, just `chmod u+x` the script. The script has no dependencies besides `curl`
 and GNU `coreutils`.
+
+## License
+
+[The MIT License.](https://en.wikipedia.org/wiki/MIT_License)
