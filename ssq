@@ -1,0 +1,78 @@
+#!/bin/sh
+
+MAX_EXTRA_ITEMS=10
+BULLET=$(echo -ne '\u26AB')
+
+function prune() {
+	sed 's/<br \/>/\n/g' | sed 's/<span class="w">\([^<]*\)<\/span>/(\1)/g; s/<\/\?[^>]*>//g; s/^\s\+//g; s/ \+,  \?/, /g; s/&rarr;/->/g' | tr -s ' '
+}
+
+function listify() {
+	sed 's/^\s*____\s*$//g' | grep -v '^$' | sed "s/____ /\t  /g; /^\t/! s/^/\t$BULLET/g"
+}
+
+function grepTag() {
+	grep -Po "$1.*?</$(echo \"$1\" | grep -Po '(?<=<)[a-zA-Z0-9_]+')>"
+}
+
+uri="https://slovnik.seznam.cz/en/?q=$1&shortView=0"
+shortened=0
+
+result=$(curl $uri 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
+found="$(echo "$result" | grepTag '<h3.*?notFirst.*?>' | prune)"
+
+if [ -z "$found" ]; then
+	echo "ssq: $1: not found" >&2
+	mistype=$(echo "$result" | grepTag '<ul class="mistype">' | prune)
+	if [ ! -z "$mistype" ]; then
+		echo "ssq: hint: did you mean any of the following?"
+		echo "$mistype" | sed 's/<\/li>/<br \/>/g' | listify
+	fi
+	exit 1
+fi
+
+echo $found: | tr [:lower:] [:upper:]
+echo "$result" | grepTag '<div id="fastMeanings">' | prune | listify
+
+advanced=$(echo "$result" | grepTag "<dl>" | sed 's/<\/dt>/<br \/>____/g' | prune)
+if [ ! -z "$advanced" ]; then
+	echo
+	echo ADVANCED GRAMMAR:
+	echo "$advanced" | head -n $MAX_EXTRA_ITEMS | listify
+
+	if [ $(echo "$advanced" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+		shortened=1
+	fi
+fi
+
+syno=$(echo "$result" | grepTag '<div class="other-meaning">' | prune)
+if [ ! -z "$syno" ]; then
+	echo
+	echo RELATED WORDS:
+	echo "$syno" | head -n $MAX_EXTRA_ITEMS | listify
+
+	if [ $(echo "$syno" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+		shortened=1
+	fi
+fi
+
+fulltext=$(echo "$result" | grepTag '<ul id="fulltext">' | prune)
+if [ ! -z "$fulltext" ]; then
+	echo
+	echo FULLTEXT:
+	echo "$fulltext" | tr -s ' ' | sed 's/\/ /\//g' | head -n $MAX_EXTRA_ITEMS | listify
+	if [ $(echo "$fulltext" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+		shortened=1
+	fi
+fi
+
+if [ $shortened -ne 0 ]; then
+	echo
+	echo "See $uri for more."
+fi
