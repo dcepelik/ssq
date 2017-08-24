@@ -10,6 +10,9 @@
 Seznam's dictionaries, provided by Lingea, are much better; contain idioms and example
 language usage, etc.
 
+As I percieve it, `ssq` is a rather limited web browser, and as such, I don't think
+it violates any terms of use. But if you're in doubt, feel free to consult it.
+
 ## Features
 
 * KISS
