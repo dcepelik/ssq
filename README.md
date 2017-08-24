@@ -11,7 +11,8 @@ Seznam's dictionaries, provided by Lingea s.r.o., are much better and contain id
 and example language usage, too.
 
 As I percieve it, `ssq` is a rather limited web browser, and as such, I don't think
-it violates any terms of use. But if you're in doubt, feel free to consult it.
+it violates any terms of use. But if you're in doubt, read it. (If you happen to find
+it somewhere.)
 
 ## Features
 
