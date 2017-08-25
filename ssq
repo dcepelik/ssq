@@ -82,7 +82,7 @@ fulltext=$(echo "$result" | grepTag '<ul id="fulltext">' | prune)
 if [ ! -z "$fulltext" ]; then
 	echo
 	echo FULLTEXT:
-	echo "$fulltext" | tr -s ' ' | sed 's/\/ /\//g' | head -n $MAX_EXTRA_ITEMS | listify
+	echo "$fulltext" | tr -s ' ' | sed 's/ \?\(!\|?\|\/\)/\1/g' | head -n $MAX_EXTRA_ITEMS | listify
 	if [ $(echo "$fulltext" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
 		echo
 		echo -e "\t (there's more)"
