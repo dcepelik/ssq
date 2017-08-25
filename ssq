@@ -1,12 +1,24 @@
 #!/bin/sh
 
+
 MAX_EXTRA_ITEMS=10
 BULLET=$(echo -ne '\u26AB')
+
+function usage() {
+    echo "$0 SEARCH-TERM [LANG]"
+    echo "LANG is: en (default), de, fr, it, es, ru, sk."
+}
+
+if [ $# -lt 1 -o "$1" = "-h" ]; then
+    usage
+    exit
+fi
 
 lang=$2
 if [ -z "$lang" ]; then
 	lang=en
 fi
+
 
 function prune() {
 	sed 's/<br \/>/\n/g' | sed 's/<span class="w">\([^<]*\)<\/span>/(\1)/g; s/<\/\?[^>]*>//g; s/^\s\+//g; s/ \+,  \?/, /g; s/&rarr;/->/g' | tr -s ' '
