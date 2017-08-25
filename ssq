@@ -1,23 +1,22 @@
 #!/bin/sh
 
-
 MAX_EXTRA_ITEMS=10
 BULLET=$(echo -ne '\u26AB')
 
+prog=$(basename $0)
+
 function usage() {
-    echo "$0 SEARCH-TERM [LANG]"
+    echo "Usage: $prog SEARCH-TERM [LANG]"
     echo "LANG is: en (default), de, fr, it, es, ru, sk."
 }
 
 if [ $# -lt 1 -o "$1" = "-h" ]; then
     usage
-    exit
+    exit 1
 fi
 
-lang=$2
-if [ -z "$lang" ]; then
-	lang=en
-fi
+query=$1
+lang=${2:-en}
 
 
 function prune() {
@@ -32,13 +31,13 @@ function grepTag() {
 	grep -Po "$1.*?</$(echo \"$1\" | grep -Po '(?<=<)[a-zA-Z0-9_]+')>"
 }
 
-result=$(curl -G --data-urlencode "shortView=0" --data-urlencode "q=$1" "https://slovnik.seznam.cz/$lang/" 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
+result=$(curl -G --data-urlencode "shortView=0" --data-urlencode "q=$query" "https://slovnik.seznam.cz/$lang/" 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
 found="$(echo "$result" | grepTag '<h3.*?notFirst.*?>' | prune)"
 
 if [ -z "$found" ]; then
 	more=$(echo "$result" | grepTag '<ul class="moreResults">')
 	if [ -z "$more" ]; then
-		echo "ssq: $1: not found" >&2
+		echo "ssq: $query: not found" >&2
 		mistype=$(echo "$result" | grepTag '<ul class="mistype">')
 		if [ ! -z "$mistype" ]; then
 			echo "ssq: hint: did you mean any of the following?"
