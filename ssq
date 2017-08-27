@@ -51,7 +51,11 @@ if [ -z "$found" ]; then
 	fi
 fi
 
-echo $found:
+echo -n $found:
+if [ "x$query" != "x$found" ]; then
+	echo -n " (mind the spelling!)"
+fi
+echo
 echo "$result" | grepTag '<div id="fastMeanings">' | prune | listify
 
 advanced=$(echo "$result" | grepTag "<dl>" | sed 's/<\/dt>/<br \/>____/g' | prune)
