@@ -32,7 +32,7 @@ function grepTag() {
 }
 
 result=$(curl -G --data-urlencode "shortView=0" --data-urlencode "q=$query" "https://slovnik.seznam.cz/$lang/" 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
-found="$(echo "$result" | grepTag '<h3.*?notFirst.*?>' | prune)"
+found="$(echo "$result" | grepTag '<h1[^/]*?notFirst[^/]*?>' | prune)"
 
 if [ -z "$found" ]; then
 	more=$(echo "$result" | grepTag '<ul class="moreResults">')
