@@ -62,7 +62,7 @@ free of charge. The dictionary content, provided by Lingea s.r.o., is great.
 
 ## EXAMPLES
 
-### MATCH FOUND, BRIEF
+### MATCH FOUND, BRIEF OUTPUT
 
 ```
 % ssq šrot
@@ -74,7 +74,7 @@ free of charge. The dictionary content, provided by Lingea s.r.o., is great.
    grind
 ```
 
-### MATCH FOUND, FULL
+### MATCH FOUND, FULL OUTPUT
 
 ```
 ssq -a šrot
