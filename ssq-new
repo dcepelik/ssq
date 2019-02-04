@@ -128,7 +128,9 @@ if options.all:
         for morf in soup.find_all('span', class_='morf'):
             print(morf.string)
             for w in morf.find_next('ol').find_all('dl'):
-                bullterms(w.find('dt'))
+                dt = w.find('dt')
+                if dt:
+                    bullterms(dt)
                 dd = w.find('dd')
                 if dd:
                     bullterms(dd)
