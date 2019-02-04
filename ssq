@@ -132,7 +132,7 @@ def main(term, lang, options):
 
     # "fast" results
     if fast:
-        for w in some.find_all('td'):
+        for w in fast.find_all('td'):
             listify(w)
     elif more:
         for w in more.find_all('li'):
