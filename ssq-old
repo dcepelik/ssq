@@ -1,0 +1,94 @@
+#!/bin/sh
+
+MAX_EXTRA_ITEMS=10
+BULLET=$(echo -ne '\u26AB')
+
+prog=$(basename $0)
+
+function usage() {
+    echo "Usage: $prog SEARCH-TERM [LANG]"
+    echo "LANG is: en (default), de, fr, it, es, ru, sk."
+}
+
+if [ $# -lt 1 -o "$1" = "-h" ]; then
+    usage
+    exit 1
+fi
+
+query=$1
+lang=${2:-en}
+
+
+function prune() {
+	sed 's/<br \/>/\n/g' | sed 's/<span class="w">\([^<]*\)<\/span>/(\1)/g; s/<\/\?[^>]*>//g; s/^\s\+//g; s/ \+,  \?/, /g; s/&rarr;/->/g' | tr -s ' '
+}
+
+function listify() {
+	sed 's/^\s*____\s*$//g' | grep -v '^$' | sed "s/____ /\t  /g; /^\t/! s/^/\t$BULLET/g"
+}
+
+function grepTag() {
+	grep -Po "$1.*?</$(echo \"$1\" | grep -Po '(?<=<)[a-zA-Z0-9_]+')>"
+}
+
+result=$(curl -G --data-urlencode "shortView=0" --data-urlencode "q=$query" "https://slovnik.seznam.cz/$lang/" 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
+found="$(echo "$result" | grepTag '<h1[^/]*?notFirst[^/]*?>' | prune)"
+
+if [ -z "$found" ]; then
+	more=$(echo "$result" | grepTag '<ul class="moreResults">')
+	if [ -z "$more" ]; then
+		echo "ssq: $query: not found" >&2
+		mistype=$(echo "$result" | grepTag '<ul class="mistype">')
+		if [ ! -z "$mistype" ]; then
+			echo "ssq: hint: did you mean any of the following?"
+			echo "$mistype" | sed 's/<\/li>/<br \/>/g' | prune | listify
+		fi
+		exit 1
+	else
+		echo "$(echo "$result" | grepTag '<h3.*?>' | prune) (non-perfect match):"
+		echo "$more" | sed 's/<\/li>/<br \/>/g' | prune | listify
+		exit 0
+	fi
+fi
+
+echo -n $found:
+if [ "x$query" != "x$found" ]; then
+	echo -n " (mind the spelling!)"
+fi
+echo
+echo "$result" | grepTag '<div id="fastMeanings">' | prune | listify
+
+advanced=$(echo "$result" | grepTag "<dl>" | sed 's/<\/dt>/<br \/>____/g' | prune)
+if [ ! -z "$advanced" ]; then
+	echo
+	echo ADVANCED GRAMMAR:
+	echo "$advanced" | head -n $MAX_EXTRA_ITEMS | listify
+
+	if [ $(echo "$advanced" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+	fi
+fi
+
+syno=$(echo "$result" | grepTag '<div class="other-meaning">' | prune)
+if [ ! -z "$syno" ]; then
+	echo
+	echo RELATED WORDS:
+	echo "$syno" | head -n $MAX_EXTRA_ITEMS | listify
+
+	if [ $(echo "$syno" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+	fi
+fi
+
+fulltext=$(echo "$result" | grepTag '<ul id="fulltext">' | prune)
+if [ ! -z "$fulltext" ]; then
+	echo
+	echo FULLTEXT:
+	echo "$fulltext" | tr -s ' ' | sed 's/ \?\(!\|?\|\/\)/\1/g' | head -n $MAX_EXTRA_ITEMS | listify
+	if [ $(echo "$fulltext" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
+		echo
+		echo -e "\t (there's more)"
+	fi
+fi

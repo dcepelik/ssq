@@ -1,94 +1,198 @@
-#!/bin/sh
+#!/usr/bin/env python3
 
-MAX_EXTRA_ITEMS=10
-BULLET=$(echo -ne '\u26AB')
+import urllib
+import urllib.parse
+import re
+import sys
+from bs4 import BeautifulSoup
+import os
+import subprocess
+from optparse import OptionParser
 
-prog=$(basename $0)
-
-function usage() {
-    echo "Usage: $prog SEARCH-TERM [LANG]"
-    echo "LANG is: en (default), de, fr, it, es, ru, sk."
-}
-
-if [ $# -lt 1 -o "$1" = "-h" ]; then
-    usage
-    exit 1
-fi
-
-query=$1
-lang=${2:-en}
+class DictionaryError(Exception):
+    pass
 
 
-function prune() {
-	sed 's/<br \/>/\n/g' | sed 's/<span class="w">\([^<]*\)<\/span>/(\1)/g; s/<\/\?[^>]*>//g; s/^\s\+//g; s/ \+,  \?/, /g; s/&rarr;/->/g' | tr -s ' '
-}
+class NotFound(DictionaryError):
+    pass
 
-function listify() {
-	sed 's/^\s*____\s*$//g' | grep -v '^$' | sed "s/____ /\t  /g; /^\t/! s/^/\t$BULLET/g"
-}
 
-function grepTag() {
-	grep -Po "$1.*?</$(echo \"$1\" | grep -Po '(?<=<)[a-zA-Z0-9_]+')>"
-}
+def tty():
+    """Returns true if both stdout and stderr are teletypes."""
+    return os.isatty(1) and os.isatty(2)
 
-result=$(curl -G --data-urlencode "shortView=0" --data-urlencode "q=$query" "https://slovnik.seznam.cz/$lang/" 2>/dev/null | tr -s [:space:] | grep -v -e '^[[:space:]]*$' | tr '\t\r\n' '   ')
-found="$(echo "$result" | grepTag '<h1[^/]*?notFirst[^/]*?>' | prune)"
+def red(t):
+    """Return t as bold red text (for exceptions)."""
+    return "\033[1;7;31m {} \033[0m".format(t) if tty() else t
 
-if [ -z "$found" ]; then
-	more=$(echo "$result" | grepTag '<ul class="moreResults">')
-	if [ -z "$more" ]; then
-		echo "ssq: $query: not found" >&2
-		mistype=$(echo "$result" | grepTag '<ul class="mistype">')
-		if [ ! -z "$mistype" ]; then
-			echo "ssq: hint: did you mean any of the following?"
-			echo "$mistype" | sed 's/<\/li>/<br \/>/g' | prune | listify
-		fi
-		exit 1
-	else
-		echo "$(echo "$result" | grepTag '<h3.*?>' | prune) (non-perfect match):"
-		echo "$more" | sed 's/<\/li>/<br \/>/g' | prune | listify
-		exit 0
-	fi
-fi
+def it(t):
+    """Return t as italic text."""
+    return "\033[3m{}\033[0m".format(t) if tty() else t
 
-echo -n $found:
-if [ "x$query" != "x$found" ]; then
-	echo -n " (mind the spelling!)"
-fi
-echo
-echo "$result" | grepTag '<div id="fastMeanings">' | prune | listify
+def b(t):
+    """Return t formatted as bold text."""
+    return "\033[1m{}\033[0m".format(t) if tty() else t
 
-advanced=$(echo "$result" | grepTag "<dl>" | sed 's/<\/dt>/<br \/>____/g' | prune)
-if [ ! -z "$advanced" ]; then
-	echo
-	echo ADVANCED GRAMMAR:
-	echo "$advanced" | head -n $MAX_EXTRA_ITEMS | listify
+def contract(s):
+    """Replace consecutive white characters in s with a single space."""
+    return re.sub(r'\s+', ' ', s) if s else ''
 
-	if [ $(echo "$advanced" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
-		echo
-		echo -e "\t (there's more)"
-	fi
-fi
+def ss(el):
+    return el.string.strip()
 
-syno=$(echo "$result" | grepTag '<div class="other-meaning">' | prune)
-if [ ! -z "$syno" ]; then
-	echo
-	echo RELATED WORDS:
-	echo "$syno" | head -n $MAX_EXTRA_ITEMS | listify
+def fmts(el):
+    """Return el as formatted text."""
+    if el.name == 'a':
+        return b(ss(el))
+    if el.name == 'span':
+        cls = el.get_attribute_list('class')
+        if 'help' in cls:
+            return it(ss(el))
+        if 'bold' in cls:
+            return b(ss(el))
+    return el.string if el.string else el.text
 
-	if [ $(echo "$syno" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
-		echo
-		echo -e "\t (there's more)"
-	fi
-fi
+def textify(el):
+    """Convert el to a formated textual representation."""
+    return contract(''.join([fmts(c) for c in el]).strip())
 
-fulltext=$(echo "$result" | grepTag '<ul id="fulltext">' | prune)
-if [ ! -z "$fulltext" ]; then
-	echo
-	echo FULLTEXT:
-	echo "$fulltext" | tr -s ' ' | sed 's/ \?\(!\|?\|\/\)/\1/g' | head -n $MAX_EXTRA_ITEMS | listify
-	if [ $(echo "$fulltext" | wc -l) -gt $MAX_EXTRA_ITEMS ]; then
-		echo
-		echo -e "\t (there's more)"
-	fi
-fi
+def lines(el):
+    """Returns a list of lists of elements which constitute a single line."""
+    lines = [[]]
+    for c in el:
+        if c.name == 'br':
+            lines.append([])
+        lines[-1].append(c)
+    return lines
+
+def fix(t):
+    """Fix spacing issues present in the input."""
+    t = re.sub(r' ([;:,!?/\)])', r'\1', t)
+    t = re.sub(r'(/) ', r'\1', t)
+    return t
+
+def bull(t):
+    """Create a bullet from the given text line."""
+    return " \u26AB {}".format(t)
+
+def indent(t):
+    """Indent given text so that it matches indentation of a bullet item."""
+    return "    {}".format(t)
+
+def listify(el):
+    """Convert el into a bulleted list."""
+    for i, l in enumerate(lines(el)):
+        t = fix(textify(l))
+        if not t:
+            continue
+        print(bull(t) if i == 0 else indent(t))
+
+def get_html(term, lang):
+    query = urllib.parse.urlencode({'q': term, 'shortView': 0})
+    url = urllib.parse.urlunparse(('https', 'slovnik.seznam.cz', lang, '', query, ''))
+    try:
+        resp = urllib.request.urlopen(url)
+    except urllib.error.URLError as e:
+        raise DictionaryError("cannot download dictionary content")
+
+    return BeautifulSoup(resp.read(), 'html.parser')
+
+def main(term, lang, options):
+    soup = get_html(term, lang)
+    results = soup.find('div', id='results')
+    h1 = results.find('h1')
+    found = None
+    if h1:
+        found = h1.string
+    pron = soup.find('p', {'class': 'pron'})
+    play = soup.find('a', id='playsound')
+    mistype = soup.find('ul', class_='mistype')
+
+    if not found:
+        raise NotFound("'{}' not found in {} dictionary".format(term, lang))
+
+    if found.lower() != term.lower():
+        print(red("BAD SPELL"), end=' ')
+    print(found, end=':')
+    if pron:
+        print(' {}'.format(pron.string), end='')
+    print()
+
+    if mistype:
+        print()
+        print("DID YOU MEAN")
+        for w in mistype.find_all('li'):
+            listify(w)
+        print() # insert empty line before the error
+        raise NotFound("{} not found in {} dictionary".format(term, lang))
+
+    fast = soup.find('div', id='fastMeanings')
+
+    # "fast" results
+    for w in fast.find_all('td'):
+        listify(w)
+
+    if options.all:
+        # advanced grammar
+        advg = soup.find('h3')
+        if advg:
+            print()
+            print(advg.string.upper())
+            for morf in soup.find_all('span', class_='morf'):
+                print(morf.string)
+                for w in morf.find_next('ol').find_all('dl'):
+                    dt = w.find('dt')
+                    if dt:
+                        listify(dt)
+                    dd = w.find('dd')
+                    if dd:
+                        listify(dd)
+
+        # other groups of related words
+        for g in soup.find_all('p', class_='morf'):
+            terms = g.find_next('div', class_='other-meaning')
+            if not terms:
+                continue
+            print()
+            print(g.string.upper())
+            for a in terms.find_all('a'):
+                print(bull(textify(a)))
+
+        ftexts = soup.find_all('ul', id='fulltext')
+        if len(ftexts):
+            print()
+            print("FULLTEXT")
+            for ftext in ftexts:
+                for li in ftext.find_all('li'):
+                    listify(li)
+
+    if options.pron:
+        if play:
+            href = play['href']
+            url = 'https://slovnik.seznam.cz/{}'.format(href)
+            subprocess.call(['mpv', '--really-quiet', url], stdout=None, stdin=None)
+        else:
+            print() # insert empty line before the error
+            raise NotFound("no {} pronunciation for '{}'".format(lang, term))
+
+if __name__ == "__main__":
+    parser = OptionParser(
+        usage="Usage: %prog [options] term [lang=en]",
+        description="Command-line front-end to slovnik.seznam.cz.",
+        epilog="Bug reports welcome at https://github.com/dcepelik/ssq/issues.")
+    parser.add_option('-a', dest='all', action='store_true', default=False,
+        help='Show full dictionary listing')
+    parser.add_option('-p', dest='pron', action='store_true', default=False,
+        help='Pronounce the word')
+    options, args = parser.parse_args()
+
+    if len(args) == 0 or len(args) > 2:
+        parser.error("incorrect number of arguments")
+    term = args[0]
+    lang = args[1] if len(args) > 1 else 'en'
+
+    try:
+        main(term, lang, options)
+    except DictionaryError as e:
+        sys.stderr.write("{}: {}\n".format("ssq", e))
+        exit(1)
