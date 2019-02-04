@@ -25,12 +25,12 @@ Looking up a word in the dictionary is as simple as
 ```
 % ssq this
 this: [ðɪs]
- ⚫ ten(to), tenhle o právě zmíněném
- ⚫ to(hle)
- ⚫ to(hle), toto, tento zde
- ⚫ this is tady ... při představování v telefonu ap.
- ⚫ takto, takhle malý ap.
- ⚫ this much tolik
+ - ten(to), tenhle o právě zmíněném
+ - to(hle)
+ - to(hle), toto, tento zde
+ - this is tady ... při představování v telefonu ap.
+ - takto, takhle malý ap.
+ - this much tolik
 ```
 
 Use `-h` to display full usage message:
@@ -67,11 +67,11 @@ free of charge. The dictionary content, provided by Lingea s.r.o., is great.
 ```
 % ssq šrot
 šrot:
- ⚫ scrap (iron)
-    scrapyard, scrapheap
- ⚫ groats, grout, coarse meal
- ⚫ swot
-    grind
+ - scrap (iron)
+   scrapyard, scrapheap
+ - groats, grout, coarse meal
+ - swot
+   grind
 ```
 
 ### MATCH FOUND, FULL
@@ -80,39 +80,39 @@ free of charge. The dictionary content, provided by Lingea s.r.o., is great.
 ssq -a šrot
 
 šrot:
- ⚫ scrap (iron)
-    scrapyard, scrapheap
- ⚫ groats, grout, coarse meal
- ⚫ swot
-    grind
+ - scrap (iron)
+   scrapyard, scrapheap
+ - groats, grout, coarse meal
+ - swot
+   grind
 
 POKROČILÁ GRAMATIKA
 rod mužský neživotné
- ⚫ (kovový odpad) scrap (iron)
-    (šrotiště) scrapyard, scrapheap
- ⚫ (drcené zrní) groats, grout, coarse meal
+ - (kovový odpad) scrap (iron)
+   (šrotiště) scrapyard, scrapheap
+ - (drcené zrní) groats, grout, coarse meal
 rod mužský životné
- ⚫ (BrE) swot
-    (hl.) (AmE) grind
+ - (BrE) swot
+   (hl.) (AmE) grind
 
 SLOVNÍ SPOJENÍ
- ⚫ kovošrot
+ - kovošrot
 
 FULLTEXT
- ⚫ železný: železný šrot → scrap iron
- ⚫ scrapheap: být zralý do šrotu, být na vyhození přístroj ap. → be fit for the scrapheap
+ - železný: železný šrot → scrap iron
+ - scrapheap: být zralý do šrotu, být na vyhození přístroj ap. → be fit for the scrapheap
 ```
 
-### NOT FOUND/PARTIAL MATCH
+### PARTIAL MATCH
 
 ```
 % ssq šel
 šel:
 
 DID YOU MEAN
- ⚫ shell - skořápka, louskat
- ⚫ jít - go
- ⚫ shall
+ - shell - skořápka, louskat
+ - jít - go
+ - shall
 
 ssq: šel not found in en dictionary
 ```
