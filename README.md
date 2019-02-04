@@ -1,94 +1,133 @@
-# `ssq`: Seznam Slovník Query
+# ssq
 
-(This page is of interest to Czech speakers only I'm afraid.)
+## ABSTRACT
 
-## What's That?
+`ssq` (Seznam Slovník query) is a command-line front-end to the on-line dictionaries
+at [slovnik.seznam.cz](http://slovnik.seznam.cz) with pronunciation playback.
 
-`ssq` is a command-line front-end to [slovnik.seznam.cz](http://slovnik.seznam.cz)
-(Czech/English, Czech/German, etc. dictionary). I have used
-[sdcv](http://dushistov.github.io/sdcv/) for a while, but the free StarDict dictionaries are poor.
-Seznam's dictionaries, provided by Lingea s.r.o., are much better and contain idioms
-and example language usage, too.
+## NOTICE
 
-As I percieve it, `ssq` is a rather limited web browser, and as such, I don't think
-it violates any terms of use. But if you're in doubt, read it. (If you happen to find
-it somewhere.)
+The original `ssq` was rewritten to Python in 2/2019. My original shell hack
+is available as `ssq-old`.
 
-## Features
+## FEATURES
 
-* KISS
-* Multilingual support
-* Support for idioms, language use examples
-* Support for failed queries ("did you mean") and non-exact matches
+* Really convenient for terminal-based workflows
+* Pronunciation playback for many words
+* Contains, phrases and related words
+* English, German, French, Italian, Spanish, Russian and Slovak dictionary
+* "Did you mean" and fulltext results
 
-## Usage
+## USAGE
 
-    ssq SEARCH-TERM [LANG]
+Looking up a word in the dictionary is as simple as
 
-The valid values for `LANG` are `en`, `de`, `fr`, `it`, `es`, `ru`, `sk`. The default
-is `en`.
+```
+% ssq this
+this: [ðɪs]
+ ⚫ ten(to), tenhle o právě zmíněném
+ ⚫ to(hle)
+ ⚫ to(hle), toto, tento zde
+ ⚫ this is tady ... při představování v telefonu ap.
+ ⚫ takto, takhle malý ap.
+ ⚫ this much tolik
+```
 
-### Exact Match
+Use `-h` to display full usage message:
 
-Hope this software isn't `$(ssq mizerný)`!
+```
+Usage: ssq [options] term [lang=en]
 
-    user@machine ~ % ssq mizerný
-    mizerný:
-            ⚫very poor 
-            ⚫lousy 
-            ⚫wretched, rotten, rubbishy, trashy 
-            ⚫miserable 
-            ⚫(god)damned, bloody, darned 
-            ⚫miserable, paltry 
-            ⚫measly 
-    
-    ADVANCED GRAMMAR:
-            ⚫(nekvalitní) very poor 
-            ⚫(i částka ap.) (hovor.) lousy 
-            ⚫(prachšpatný) wretched, rotten, rubbishy, trashy 
-            ⚫(počasí, život) miserable 
-            ⚫(zatracený) (hovor.) (god)damned, bloody, darned 
-            ⚫(nepatrný) miserable, paltry 
-            ⚫(hovor.) measly 
-    
-    RELATED WORDS:
-            ⚫bezcharakterní, nevalný, špatný, ubohý, hanebný, ničemný, nedostatečný 
-            ⚫špičkový, prvotřídní, zásadový, poctivý, kvalitní, čestný, vynikající 
-    
-    FULLTEXT:
-            ⚫spirit: v mizerné náladě, být sklíčený, bez nálady -> in low spirits 
+Command-line front-end to slovnik.seznam.cz.
 
-### Non-exact Match
+Options:
+  -h, --help  show this help message and exit
+  -a          Show full dictionary listing
+  -p          Pronounce the word
 
-    user@machine ~ % ssq šel
-    šel (non-perfect match):
-            ⚫shell - skořápka, louskat
-            ⚫jít - go
-            ⚫shall
+Bug reports welcome at https://github.com/dcepelik/ssq/issues.
+```
 
+## REMARKS
 
-### Failed Query
+This simple Python 3 script only depends on `beautifulsoup4` (for HTML
+processing) and on `mpv` optionally (for pronunciation playback).
 
-    user@machine ~ % ssq bba
-    ssq: bba: not found
-    ssq: hint: did you mean any of the following?
-            ⚫dva, dvě - two 
-            ⚫bio - organic 
-            ⚫BA - bakalářský stupeň 
-            ⚫BBC 
-            ⚫MBA - magisterský titul 
-            ⚫bra - podprsenka 
-            ⚫oba, obě - both of them 
-            ⚫boa - boa 
-            ⚫bob - bean plant, bobsleigh 
-            ⚫BBQ - opékání 
-            ⚫ba - yeah 
+As I percieve it, `ssq` is a rather limited web browser, and as such, I believe
+it does not violate any terms of use. But that's just my opinion and you're
+encouraged to check.
 
-## Installation
+I would like to thank Seznam.cz, a.s., for providing the dictionaries on-line
+free of charge. The dictionary content, provided by Lingea s.r.o., is great.
 
-Well, just `chmod u+x` the script. The script has no dependencies besides `curl`
-and GNU `coreutils`.
+## EXAMPLES
 
-## License
+### MATCH FOUND, BRIEF
 
-[The MIT License.](https://en.wikipedia.org/wiki/MIT_License)
+```
+% ssq šrot
+šrot:
+ ⚫ scrap (iron)
+    scrapyard, scrapheap
+ ⚫ groats, grout, coarse meal
+ ⚫ swot
+    grind
+```
+
+### MATCH FOUND, FULL
+
+```
+ssq -a šrot
+
+šrot:
+ ⚫ scrap (iron)
+    scrapyard, scrapheap
+ ⚫ groats, grout, coarse meal
+ ⚫ swot
+    grind
+
+POKROČILÁ GRAMATIKA
+rod mužský neživotné
+ ⚫ (kovový odpad) scrap (iron)
+    (šrotiště) scrapyard, scrapheap
+ ⚫ (drcené zrní) groats, grout, coarse meal
+rod mužský životné
+ ⚫ (BrE) swot
+    (hl.) (AmE) grind
+
+SLOVNÍ SPOJENÍ
+ ⚫ kovošrot
+
+FULLTEXT
+ ⚫ železný: železný šrot → scrap iron
+ ⚫ scrapheap: být zralý do šrotu, být na vyhození přístroj ap. → be fit for the scrapheap
+```
+
+### NOT FOUND/PARTIAL MATCH
+
+```
+% ssq šel
+šel:
+
+DID YOU MEAN
+ ⚫ shell - skořápka, louskat
+ ⚫ jít - go
+ ⚫ shall
+
+ssq: šel not found in en dictionary
+```
+
+## INSTALLATION
+
+Use common sense.
+
+My setup:
+
+  - `git clone git@github.com:dcepelik/ssq.git ~/sw/ssq`
+  - `ln -s ~/sw/ssq/ssq ~/bin/ssq`
+
+(I have `~/bin` in my `$PATH`.)
+
+## LICENSE
+
+[MIT](https://en.wikipedia.org/wiki/MIT_License)

@@ -107,6 +107,7 @@ def main(term, lang, options):
     pron = soup.find('p', {'class': 'pron'})
     play = soup.find('a', id='playsound')
     mistype = soup.find('ul', class_='mistype')
+    more = soup.find('ul', class_='moreResults')
 
     if not found:
         raise NotFound("'{}' not found in {} dictionary".format(term, lang))
@@ -118,10 +119,11 @@ def main(term, lang, options):
         print(' {}'.format(pron.string), end='')
     print()
 
-    if mistype:
+    imperfect = mistype or more
+    if imperfect:
         print()
         print("DID YOU MEAN")
-        for w in mistype.find_all('li'):
+        for w in imperfect.find_all('li'):
             listify(w)
         print() # insert empty line before the error
         raise NotFound("{} not found in {} dictionary".format(term, lang))
@@ -129,8 +131,12 @@ def main(term, lang, options):
     fast = soup.find('div', id='fastMeanings')
 
     # "fast" results
-    for w in fast.find_all('td'):
-        listify(w)
+    if fast:
+        for w in some.find_all('td'):
+            listify(w)
+    elif more:
+        for w in more.find_all('li'):
+            listify(w)
 
     if options.all:
         # advanced grammar
