@@ -14,7 +14,7 @@ is available as `ssq-old`.
 
 * Really convenient for terminal-based workflows
 * Pronunciation playback for many words
-* Contains, phrases and related words
+* Contains idioms, phrases and related words
 * English, German, French, Italian, Spanish, Russian and Slovak dictionary
 * "Did you mean" and fulltext results
 
